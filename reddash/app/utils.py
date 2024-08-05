@@ -630,11 +630,11 @@ def initialize_websocket(app: Flask) -> bool:
 
 def check_for_disconnect(app: Flask, method: str, result: typing.Dict[str, typing.Any]) -> bool:
     if (
-        "error" in result
-        and result["error"]["message"] == "Method not found"
+        isinstance(result.get("error"), dict)
+        and result["error"].get("message") == "Method not found"
         or result.get("disconnected", False)
     ):
-        app.config["RPC_CONNECTED"]: bool = False
+        app.config["RPC_CONNECTED"] = False  # Fixed the syntax here
         if app.ws is not None:
             app.ws.close()
             app.ws = None
