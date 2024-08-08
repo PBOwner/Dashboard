@@ -57,6 +57,9 @@ class TasksManager:
                     if not connected:
                         continue
 
+                # if "result" not in result:
+                #     self.app.logger.error(f"RPC websocket returned an unexpected response: {result}")
+                #     continue
                 if method == "DASHBOARDRPC__GET_DATA":
                     self.app.data.update(**result)
                 elif method == "DASHBOARDRPC__GET_VARIABLES":
@@ -97,11 +100,11 @@ class TasksManager:
                         if result.get("disconnected", False) or "version" not in result:
                             continue
                         if result["version"] != version != 0:
-                            self.ignore_disconnect = True
+                            self.ignore_disconnect: bool = True
                             self.app.logger.info("RPC websocket behind. Closing and restarting...")
                             self.app.ws.close()
                             initialize_websocket(self.app)
-                            self.ignore_disconnect = False
+                            self.ignore_disconnect: bool = False
                         version = result["version"]
         except Exception as e:
             self.app.logger.exception(
@@ -123,18 +126,18 @@ class TasksManager:
             if self.ignore_disconnect:
                 continue
             if self.app.ws and self.app.ws.connected:
-                self.app.config["RPC_CONNECTED"] = True
+                self.app.config["RPC_CONNECTED"]: bool = True
                 if last_state_disconnected:
                     self.app.logger.info("Reconnected to RPC Websocket.")
-                    self.app.config["LAST_RPC_EVENT"] = datetime.datetime.now(
+                    self.app.config["LAST_RPC_EVENT"]: datetime.datetime = datetime.datetime.now(
                         tz=datetime.timezone.utc
                     )
                     last_state_disconnected = False
             elif not last_state_disconnected:
                 self.app.logger.warning("Disconnected from RPC Websocket.")
-                self.app.config["RPC_CONNECTED"] = False
+                self.app.config["RPC_CONNECTED"]: bool = False
                 last_state_disconnected = True
-                self.app.config["LAST_RPC_EVENT"] = datetime.datetime.now(
+                self.app.config["LAST_RPC_EVENT"]: datetime.datetime = datetime.datetime.now(
                     tz=datetime.timezone.utc
                 )
                 if self.app.ws:
@@ -190,4 +193,4 @@ class TasksManager:
             if isinstance(t, threading.Thread):
                 t.join()
             else:
-                t.cancel()
+                t.stop()
