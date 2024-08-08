@@ -630,11 +630,11 @@ def initialize_websocket(app: Flask) -> bool:
 
 def check_for_disconnect(app: Flask, method: str, result: typing.Dict[str, typing.Any]) -> bool:
     if (
-        isinstance(result.get("error"), dict)
-        and result["error"].get("message") == "Method not found"
+        "error" in result
+        and result["error"]["message"] == "Method not found"
         or result.get("disconnected", False)
     ):
-        app.config["RPC_CONNECTED"] = False  # Fixed the syntax here
+        app.config["RPC_CONNECTED"]: bool = False
         if app.ws is not None:
             app.ws.close()
             app.ws = None
@@ -666,18 +666,18 @@ async def get_result(app: Flask, request: typing.Dict[str, typing.Any], *, retry
         initialize_websocket(app)
         return await get_result(app, request, retry=False)
     if "error" in result:
-        if isinstance(result["error"], dict) and result["error"].get("message") == "Method not found":
+        if result["error"]["message"] == "Method not found":
             return {"status": 1, "error": _("Not connected to bot.")}
         app.logger.error(result["error"])
         return {"status": 1, "error": _("Something went wrong.")}
-    if not result["result"] or (isinstance(result["result"], dict) and result["result"].get("disconnected", False)):
+    if not result["result"] or isinstance(result["result"], typing.Dict) and result["result"].get("disconnected", False):
         return {"status": 1, "error": _("Not connected to bot.")}
     return result["result"]
 
 
 def notify_owner_of_blacklist(app: Flask, ip: str) -> None:
     while True:
-        if app.cog is not None or (app.ws and app.ws.connected):
+        if app.cog is not None or app.ws and app.ws.connected:
             request = {
                 "jsonrpc": "2.0",
                 "id": 0,
@@ -685,7 +685,7 @@ def notify_owner_of_blacklist(app: Flask, ip: str) -> None:
                 "params": [ip],
             }
             result = (app, request)
-            if not result or ("error" in result and isinstance(result["error"], dict)):
+            if not result or "error" in result:
                 time.sleep(1)
                 continue
             break
